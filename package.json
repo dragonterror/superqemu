@@ -1,0 +1,39 @@
+{
+	"name": "@computernewb/superqemu",
+	"version": "0.1.0",
+	"description": "A simple and easy to use QEMU supervision runtime for Node.js",
+	"exports": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"files": [
+		"./dist",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "parcel build src/index.ts --target node --target types"
+	},
+	"author": "",
+	"license": "MIT",
+	"targets": {
+		"types": {},
+		"node": {
+			"context": "node",
+			"isLibrary": true,
+			"outputFormat": "esmodule"
+		}
+	},
+	"dependencies": {
+		"@computernewb/nodejs-rfb": "^0.3.0",
+		"execa": "^8.0.1",
+		"pino": "^9.3.1"
+	},
+	"devDependencies": {
+		"@parcel/packager-ts": "2.12.0",
+		"@parcel/transformer-typescript-types": "2.12.0",
+		"@types/node": "^20.14.10",
+		"parcel": "^2.12.0",
+		"pino-pretty": "^11.2.1",
+		"typescript": ">=3.0.0"
+	},
+	"packageManager": "yarn@4.1.1"
+}
