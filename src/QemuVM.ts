@@ -86,7 +86,7 @@ export class QemuVM extends EventEmitter {
 		this.qmpInstance.on('connected', async () => {
 			self.logger.info('QMP ready');
 
-			if (process.platform === "win32") {
+			if (this.definition.forceTcp || process.platform === "win32") {
 				this.display = new QemuDisplay({
 					host: this.definition.vncHost || '127.0.0.1',
 					port: this.definition.vncPort || 5900,
