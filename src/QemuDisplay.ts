@@ -33,12 +33,12 @@ export class QemuDisplay extends EventEmitter {
 	});
 
 	private vncShouldReconnect: boolean = false;
-	private vncSocketPath: string;
+	private vncConnectOpts: any;
 
-	constructor(socketPath: string) {
+	constructor(vncConnectOpts: any) {
 		super();
 
-		this.vncSocketPath = socketPath;
+		this.vncConnectOpts = vncConnectOpts;
 
 		this.displayVnc.on('connectTimeout', () => {
 			this.Reconnect();
@@ -100,9 +100,7 @@ export class QemuDisplay extends EventEmitter {
 		// TODO: this should also give up after a max tries count
 		// if we fail after max tries, emit a event
 
-		this.displayVnc.connect({
-			path: this.vncSocketPath
-		});
+		this.displayVnc.connect(this.vncConnectOpts);
 	}
 
 	Connect() {

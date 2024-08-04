@@ -18,6 +18,9 @@ export type QemuVmDefinition = {
 	id: string;
 	command: string;
 	snapshot: boolean;
+	forceTcp: boolean;
+	vncHost: string | undefined;
+	vncPort: number | undefined;
 };
 
 /// Temporary path base (for UNIX sockets/etc.)
@@ -83,7 +86,16 @@ export class QemuVM extends EventEmitter {
 		this.qmpInstance.on('connected', async () => {
 			self.logger.info('QMP ready');
 
-			this.display = new QemuDisplay(this.GetVncPath());
+			if (process.platform === "win32") {
+				this.display = new QemuDisplay({
+					host: this.definition.vncHost || '127.0.0.1',
+					port: this.definition.vncPort || 5900,
+				})
+			} else {
+				this.display = new QemuDisplay({
+					path: this.GetVncPath()
+				});
+			}
 
 			self.display?.on('connected', () => {
 				// The VM can now be considered started
@@ -107,7 +119,17 @@ export class QemuVM extends EventEmitter {
 		if (!this.addedAdditionalArguments) {
 			cmd += ' -no-shutdown';
 			if (this.definition.snapshot) cmd += ' -snapshot';
-			cmd += ` -qmp stdio -vnc unix:${this.GetVncPath()}`;
+			cmd += ` -qmp stdio`;
+			if (this.definition.forceTcp || process.platform === "win32") {
+				let host = this.definition.vncHost || '127.0.0.1';
+				let port = this.definition.vncPort || 5900;
+				if (port < 5900) {
+					throw new Error('VNC port must be greater than or equal to 5900');
+				}
+				cmd += ` -vnc ${host}:${port - 5900}`;
+			} else {
+				cmd += ` -vnc unix:${this.GetVncPath()}`;
+			}
 			this.definition.command = cmd;
 			this.addedAdditionalArguments = true;
 		}
