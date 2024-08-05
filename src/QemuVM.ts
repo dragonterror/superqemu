@@ -90,6 +90,7 @@ export class QemuVM extends EventEmitter {
 				this.display = new QemuDisplay({
 					host: this.definition.vncHost || '127.0.0.1',
 					port: this.definition.vncPort || 5900,
+					path: null
 				})
 			} else {
 				this.display = new QemuDisplay({
