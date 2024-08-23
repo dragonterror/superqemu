@@ -13,6 +13,7 @@ export enum VMState {
 	Stopping
 }
 
+/// VM definition.
 export type QemuVmDefinition = {
 	id: string;
 	command: string;
@@ -22,6 +23,7 @@ export type QemuVmDefinition = {
 	vncPort: number | undefined;
 };
 
+/// Display information.
 export interface QemuVMDisplayInfo {
 	type: 'vnc-uds' | 'vnc-tcp';
 	// 'vnc-uds'
@@ -94,7 +96,6 @@ export class QemuVM extends EventEmitter {
 
 		this.qmpInstance.on('connected', async () => {
 			self.logger.info('QMP ready');
-
 			self.SetState(VMState.Started);
 		});
 	}

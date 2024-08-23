@@ -1,13 +1,15 @@
 {
 	"name": "@computernewb/superqemu",
-	"version": "0.2.4-alpha0",
+	"version": "0.2.4",
 	"description": "A simple and easy to use QEMU supervision runtime for Node.js",
 	"exports": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"type": "module",
 	"files": [
 		"./dist",
-		"LICENSE"
+		"LICENSE",
+		"README.md",
+		"RELEASE_NOTES.md"
 	],
 	"scripts": {
 		"build": "parcel build src/index.ts --target node --target types"
@@ -34,5 +36,9 @@
 		"pino-pretty": "^11.2.1",
 		"typescript": ">=3.0.0"
 	},
-	"packageManager": "yarn@4.1.1"
+	"packageManager": "yarn@4.4.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://git.computernewb.com/computernewb/superqemu.git"
+	}
 }
