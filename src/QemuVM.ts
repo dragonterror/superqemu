@@ -1,7 +1,6 @@
 import { execaCommand, ExecaChildProcess } from 'execa';
 import { EventEmitter } from 'events';
 import { QmpClient, IQmpClientWriter, QmpEvent } from './QmpClient.js';
-import { QemuDisplay } from './QemuDisplay.js';
 import { unlink } from 'node:fs/promises';
 
 import pino from 'pino';
@@ -22,6 +21,16 @@ export type QemuVmDefinition = {
 	vncHost: string | undefined;
 	vncPort: number | undefined;
 };
+
+export interface QemuVMDisplayInfo {
+	type: 'vnc-uds' | 'vnc-tcp';
+	// 'vnc-uds'
+	path?: string;
+
+	// 'vnc-tcp'
+	host?: string;
+	port?: number;
+}
 
 /// Temporary path base (for UNIX sockets/etc.)
 const kVmTmpPathBase = `/tmp`;
@@ -59,7 +68,7 @@ export class QemuVM extends EventEmitter {
 
 	private qemuProcess: ExecaChildProcess | null = null;
 
-	private display: QemuDisplay | null = null;
+	private displayInfo: QemuVMDisplayInfo | null = null;
 	private definition: QemuVmDefinition;
 	private addedAdditionalArguments = false;
 
@@ -86,26 +95,7 @@ export class QemuVM extends EventEmitter {
 		this.qmpInstance.on('connected', async () => {
 			self.logger.info('QMP ready');
 
-			if (this.definition.forceTcp || process.platform === "win32") {
-				this.display = new QemuDisplay({
-					host: this.definition.vncHost || '127.0.0.1',
-					port: this.definition.vncPort || 5900,
-					path: null
-				})
-			} else {
-				this.display = new QemuDisplay({
-					path: this.GetVncPath()
-				});
-			}
-
-			self.display?.on('connected', () => {
-				// The VM can now be considered started
-				self.logger.info('Display connected');
-				self.SetState(VMState.Started);
-			});
-
-			// now that QMP has connected, connect to the display
-			self.display?.Connect();
+			self.SetState(VMState.Started);
 		});
 	}
 
@@ -121,16 +111,27 @@ export class QemuVM extends EventEmitter {
 			cmd += ' -no-shutdown';
 			if (this.definition.snapshot) cmd += ' -snapshot';
 			cmd += ` -qmp stdio`;
-			if (this.definition.forceTcp || process.platform === "win32") {
+			if (this.definition.forceTcp || process.platform === 'win32') {
 				let host = this.definition.vncHost || '127.0.0.1';
 				let port = this.definition.vncPort || 5900;
 				if (port < 5900) {
 					throw new Error('VNC port must be greater than or equal to 5900');
 				}
 				cmd += ` -vnc ${host}:${port - 5900}`;
+				this.displayInfo = {
+					type: 'vnc-tcp',
+					host: host,
+					port: port
+				};
 			} else {
 				cmd += ` -vnc unix:${this.GetVncPath()}`;
+				this.displayInfo = {
+					type: 'vnc-uds',
+					path: this.GetVncPath()
+				};
 			}
+
+			
 			this.definition.command = cmd;
 			this.addedAdditionalArguments = true;
 		}
@@ -190,8 +191,13 @@ export class QemuVM extends EventEmitter {
 		});
 	}
 
-	GetDisplay() {
-		return this.display!;
+	// Gets the required information to connect to the VNC server
+	// that Superqemu enables by adding arguments to the QEMU launch
+	// command. Superqemu no longer directly has a VNC client.
+	//
+	// This is only null if the VM has never been started.
+	GetDisplayInfo() {
+		return this.displayInfo;
 	}
 
 	GetState() {
@@ -213,6 +219,7 @@ export class QemuVM extends EventEmitter {
 		this.emit('statechange', this.state);
 	}
 
+	// No longer internal
 	private GetVncPath() {
 		return `${kVmTmpPathBase}/superqemu-${this.definition.id}-vnc`;
 	}
@@ -243,16 +250,15 @@ export class QemuVM extends EventEmitter {
 		this.qemuProcess.on('exit', async (code) => {
 			self.logger.info('QEMU process exited');
 
-			// Disconnect from the display and QMP connections.
-			await self.DisconnectDisplay();
-
 			self.qmpInstance.reset();
 			self.qmpInstance.setWriter(null);
 
-			// Remove the VNC UDS socket.
-			try {
-				await unlink(this.GetVncPath());
-			} catch (_) {}
+			if (!this.definition.forceTcp || process.platform !== 'win32') {
+				// Remove the VNC UDS socket.
+				try {
+					await unlink(this.GetVncPath());
+				} catch (_) {}
+			}
 
 			if (self.state != VMState.Stopping) {
 				if (code == 0) {
@@ -287,14 +293,4 @@ export class QemuVM extends EventEmitter {
 		self.qmpInstance.reset();
 		self.qmpInstance.setWriter(writer);
 	}
-
-	private async DisconnectDisplay() {
-		try {
-			this.display?.Disconnect();
-			this.display = null;
-		} catch (err) {
-			// oh well lol
-		}
-	}
-
 }
