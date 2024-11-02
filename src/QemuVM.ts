@@ -160,14 +160,25 @@ export class QemuVM extends EventEmitter {
 		await this.MonitorCommand('system_reset');
 	}
 
-	async Stop() {
+	async Stop() : Promise<void> {
 		this.AssertState(VMState.Started, 'cannot use QemuVM#Stop on a non-started VM');
+		// I'm not sure this is better, but I'm also not sure it should be an assertion
+		//if(this.state !== VMState.Started)
+		//	return;
 
 		// Indicate we're stopping, so we don't erroneously start trying to restart everything we're going to tear down.
 		this.SetState(VMState.Stopping);
 
 		// Stop the QEMU process, which will bring down everything else.
 		await this.StopQemu();
+
+		// Wait for the VM to reach the stopped state.
+		return new Promise((res, rej) => {
+			this.once('statechange', (state) => {
+				if(state == VMState.Stopped)
+					res();
+			});
+		});
 	}
 
 	async Reset() {
