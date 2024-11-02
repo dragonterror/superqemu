@@ -90,7 +90,6 @@ export class QemuVM extends EventEmitter {
 		// done so we can have our cake (compatibility) and eat it too
 		// (do this fun process abstraction stuff for whatever really)
 		if(!processLauncher) {
-			this.logger.warn('Using default process launcher. If this is not desired review your code to make sure the launcher is passed properly!');
 			this.qemuLauncher = new DefaultProcessLauncher();
 		} else {
 			this.qemuLauncher = processLauncher;
