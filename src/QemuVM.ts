@@ -5,6 +5,8 @@ import { unlink } from 'node:fs/promises';
 
 import pino from 'pino';
 import { Readable, Writable } from 'stream';
+import { IProcess, IProcessLauncher } from './ProcessInterface.js';
+import { DefaultProcessLauncher } from './DefaultProcess.js';
 
 export enum VMState {
 	Stopped,
@@ -68,7 +70,8 @@ export class QemuVM extends EventEmitter {
 	// QMP stuff.
 	private qmpInstance: QmpClient = new QmpClient();
 
-	private qemuProcess: ExecaChildProcess | null = null;
+	private qemuProcess: IProcess | null = null;
+	private qemuLauncher: IProcessLauncher;
 
 	private displayInfo: QemuVMDisplayInfo | null = null;
 	private definition: QemuVmDefinition;
@@ -76,12 +79,22 @@ export class QemuVM extends EventEmitter {
 
 	private logger: pino.Logger;
 
-	constructor(def: QemuVmDefinition) {
+	constructor(def: QemuVmDefinition, processLauncher?: IProcessLauncher) {
 		super();
 		this.definition = def;
 		this.logger = pino({
 			name: `SuperQEMU.QemuVM/${this.definition.id}`
 		});
+
+		// Fall back to the default process launcher. This is
+		// done so we can have our cake (compatibility) and eat it too
+		// (do this fun process abstraction stuff for whatever really)
+		if(!processLauncher) {
+			this.logger.warn('Using default process launcher. If this is not desired review your code to make sure the launcher is passed properly!');
+			this.qemuLauncher = new DefaultProcessLauncher();
+		} else {
+			this.qemuLauncher = processLauncher;
+		}
 
 		let self = this;
 
@@ -233,7 +246,7 @@ export class QemuVM extends EventEmitter {
 		this.logger.info(`Starting QEMU with command \"${split}\"`);
 
 		// Start QEMU
-		this.qemuProcess = execaCommand(split, {
+		this.qemuProcess = this.qemuLauncher.launch(split, {
 			stdin: 'pipe',
 			stdout: 'pipe',
 			stderr: 'pipe'
@@ -250,6 +263,10 @@ export class QemuVM extends EventEmitter {
 
 		this.qemuProcess.on('exit', async (code) => {
 			self.logger.info('QEMU process exited');
+
+			// Dispose events. StartQemu() will assign them again to the new process.
+			// A bit mucky but /shrug.
+			self.qemuProcess?.dispose();
 
 			self.qmpInstance.reset();
 			self.qmpInstance.setWriter(null);

@@ -28,6 +28,7 @@ export interface IProcess extends EventEmitter {
 
     kill(signal?: number | NodeJS.Signals): boolean;
 
+    dispose(): void;
 }
 
 // Launches a processs.
