@@ -89,7 +89,7 @@ export class QemuVM extends EventEmitter {
 		// Fall back to the default process launcher. This is
 		// done so we can have our cake (compatibility) and eat it too
 		// (do this fun process abstraction stuff for whatever really)
-		if(!processLauncher) {
+		if (!processLauncher) {
 			this.qemuLauncher = new DefaultProcessLauncher();
 		} else {
 			this.qemuLauncher = processLauncher;
@@ -144,7 +144,6 @@ export class QemuVM extends EventEmitter {
 				};
 			}
 
-			
 			this.definition.command = cmd;
 			this.addedAdditionalArguments = true;
 		}
@@ -160,7 +159,7 @@ export class QemuVM extends EventEmitter {
 		await this.MonitorCommand('system_reset');
 	}
 
-	async Stop() : Promise<void> {
+	async Stop(): Promise<void> {
 		this.AssertState(VMState.Started, 'cannot use QemuVM#Stop on a non-started VM');
 		// I'm not sure this is better, but I'm also not sure it should be an assertion
 		//if(this.state !== VMState.Started)
@@ -175,15 +174,27 @@ export class QemuVM extends EventEmitter {
 		// Wait for the VM to reach the stopped state.
 		return new Promise((res, rej) => {
 			this.once('statechange', (state) => {
-				if(state == VMState.Stopped)
-					res();
+				if (state == VMState.Stopped) res();
 			});
 		});
 	}
 
-	async Reset() {
+	async Reset(): Promise<void> {
 		this.AssertState(VMState.Started, 'cannot use QemuVM#Reset on a non-started VM');
 		await this.StopQemu();
+
+		let self = this;
+
+		// Wait for the VM to regain the started state
+		return new Promise((res, rej) => {
+			let cb = (state: VMState) => {
+				if (state == VMState.Started) {
+					this.removeListener('statechange', cb);
+					res();
+				}
+			};
+			this.on('statechange', cb);
+		});
 	}
 
 	async QmpCommand(command: string, args: any | null): Promise<any> {
@@ -277,6 +288,7 @@ export class QemuVM extends EventEmitter {
 			// Dispose events. StartQemu() will assign them again to the new process.
 			// A bit mucky but /shrug.
 			self.qemuProcess?.dispose();
+			self.qemuProcess = null;
 
 			self.qmpInstance.reset();
 			self.qmpInstance.setWriter(null);
@@ -296,10 +308,12 @@ export class QemuVM extends EventEmitter {
 					// Note that we've already tore down everything upon entry to this event handler; therefore
 					// we can simply set the state and move on.
 					this.SetState(VMState.Stopped);
+					self.qemuProcess = null;
 				}
 			} else {
 				// Indicate we have stopped.
 				this.SetState(VMState.Stopped);
+				self.qemuProcess = null;
 			}
 		});
 	}
@@ -307,7 +321,6 @@ export class QemuVM extends EventEmitter {
 	private async StopQemu() {
 		if (this.qemuProcess) {
 			this.qemuProcess?.kill('SIGTERM');
-			this.qemuProcess = null;
 		}
 	}
 
