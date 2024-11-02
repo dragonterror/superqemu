@@ -1,6 +1,6 @@
 {
 	"name": "@computernewb/superqemu",
-	"version": "0.3.0",
+	"version": "0.3.2",
 	"description": "A simple and easy to use QEMU supervision runtime for Node.js",
 	"exports": "./dist/index.js",
 	"types": "./dist/index.d.ts",

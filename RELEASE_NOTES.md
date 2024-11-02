@@ -1,5 +1,11 @@
 # Superqemu Release Notes
 
+## `v0.3.1`
+
+This minor release fixes a bug that would result in the process interface's `dispose()` method never actually being called.
+
+This version is published as `0.3.2` because the npm registry is the most utterly useless piece of garbage I've ever used. This sentiment tends to echo for much of the JavaScript ecosystem. Almost like shoehorning a language meant literally for DHTML clocks and other stuff into being a backend language wasn't a great idea or something...
+
 ## `v0.3.0`
 
 This release contains *possibly* breaking changes:
