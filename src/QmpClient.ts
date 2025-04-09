@@ -90,6 +90,9 @@ export class QmpClient extends EventEmitter {
 	}
 
 	private handleQmpLine(line: string) {
+		if line.incldes("Hypervisor") {
+			break;
+		}
 		let obj = JSON.parse(line);
 
 		switch (this.state) {
