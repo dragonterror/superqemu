@@ -1,7 +1,7 @@
 {
-	"name": "@computernewb/superqemu",
+	"name": "@dragonterror/superqemu",
 	"version": "0.3.2",
-	"description": "A simple and easy to use QEMU supervision runtime for Node.js",
+	"description": "A simple and easy to use QEMU supervision runtime for Node.js, forked to have a hypervisor fix.",
 	"exports": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"type": "module",
@@ -39,6 +39,6 @@
 	"packageManager": "yarn@4.4.0",
 	"repository": {
 		"type": "git",
-		"url": "git+https://git.computernewb.com/computernewb/superqemu.git"
+		"url": "https://github.com/dragonterror/superqemu"
 	}
 }
