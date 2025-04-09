@@ -14,7 +14,7 @@
 	"scripts": {
 		"build": "parcel build src/index.ts --target node --target types"
 	},
-	"author": "",
+	"author": "Dragonterror",
 	"license": "MIT",
 	"targets": {
 		"types": {},
@@ -29,16 +29,24 @@
 		"pino": "^9.3.1"
 	},
 	"devDependencies": {
-		"@parcel/packager-ts": "2.12.0",
-		"@parcel/transformer-typescript-types": "2.12.0",
+		"@parcel/packager-ts": "^2.14.4",
+		"@parcel/transformer-typescript-types": "^2.14.4",
 		"@types/node": "^20.14.10",
-		"parcel": "^2.12.0",
+		"parcel": "^2.14.4",
 		"pino-pretty": "^11.2.1",
 		"typescript": ">=3.0.0"
 	},
 	"packageManager": "yarn@4.4.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/dragonterror/superqemu"
-	}
+		"url": "git+https://github.com/dragonterror/superqemu.git"
+	},
+	"main": "index.js",
+	"directories": {
+		"example": "examples"
+	},
+	"bugs": {
+		"url": "https://github.com/dragonterror/superqemu/issues"
+	},
+	"homepage": "https://github.com/dragonterror/superqemu#readme"
 }
